@@ -92,8 +92,7 @@ void master(void *arg1, void *arg2, void *arg3)
 	thread2->base.usage.track_usage = true;
 	k_thread_exec_time_set(thread2, k_ms_to_cyc_ceil32(T2_EXEC_TIME));
 
-	// Calculate total utilization, > 1 means overload
-	printk("Utilization: %f\n", (double)T1_EXEC_TIME / T1_PERIOD + (double)T2_EXEC_TIME / T2_PERIOD);
+	
 
 	int dummy = 0;
 
@@ -128,11 +127,19 @@ void master(void *arg1, void *arg2, void *arg3)
 		t2_deadline_misses[i] = miss > 0 ? miss : 0;
 	}
 
+	uint64_t tardiness = 0;
+
 	// Tardiness is sum of (time that deadline was missed * weight) for each thread
 	for (int i = 0; i < ITERATIONS; i++) {
 		// printk("Finish time t1: %d t2: %d\n",finish_t1[i],finish_t2[i]);
+		tardiness += t1_deadlines_misses[i] * T1_WEIGHT;
+		tardiness += t2_deadline_misses[i] * T2_WEIGHT;
 		printk("Missed deadline t1: %d t2: %d\n",t1_deadlines_misses[i],t2_deadline_misses[i]);
 	}
+
+	// Calculate total utilization, > 1 means overload
+	printk("Utilization: %f\n", (double)T1_EXEC_TIME / T1_PERIOD + (double)T2_EXEC_TIME / T2_PERIOD);
+	printk("Tardiness: %lld\n", tardiness);
 }
 
 int main(void)
